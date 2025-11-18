@@ -1,0 +1,17 @@
+{
+  "name": "tonpai-ice-bot",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@line/bot-sdk": "^7.5.2",
+    "googleapis": "^129.0.0",
+    "@google-cloud/speech": "^6.0.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
