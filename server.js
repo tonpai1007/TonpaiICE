@@ -18,6 +18,13 @@ if (!GOOGLE_PRIVATE_KEY || !GOOGLE_CLIENT_EMAIL) {
   console.error('Missing Google auth variables - Sheets/Drive/STT may fail');
 }
 
+const speechClient = new speech.SpeechClient({
+  credentials: {
+    private_key: GOOGLE_PRIVATE_KEY,
+    client_email: GOOGLE_CLIENT_EMAIL
+  }
+});
+
 const auth = new google.auth.JWT(GOOGLE_CLIENT_EMAIL, null, GOOGLE_PRIVATE_KEY, ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']);
 
 const sheets = google.sheets({version: 'v4', auth});
@@ -127,12 +134,21 @@ async function processVoice(id, token) {
 }
 
 async function speechToText(blob) {
-  const client = new speech.SpeechClient({ credentials: { private_key: GOOGLE_PRIVATE_KEY, client_email: GOOGLE_CLIENT_EMAIL } });
-  const [response] = await client.recognize({
-    config: { encoding: 'OGG_OPUS', sampleRateHertz: 16000, languageCode: 'th-TH' },
-    audio: { content: blob.toString('base64') }
-  });
-  return response.results[0].alternatives[0].transcript || 'ไม่ชัด';
+  const audioBytes = blob.toString('base64');
+
+  const request = {
+    config: {
+      languageCode: 'th-TH',
+      enableAutomaticPunctuation: true,
+    },
+    audio: {
+      content: audioBytes
+    }
+  };
+
+  const [response] = await speechClient.recognize(request);
+
+  return response.results?.[0]?.alternatives?.[0]?.transcript || 'ไม่ชัดค่ะ';
 }
 
 async function replyLine(token, text) {
@@ -144,3 +160,4 @@ async function replyLine(token, text) {
 }
 
 app.listen(process.env.PORT || 3000, () => console.log('Bot running'));
+
