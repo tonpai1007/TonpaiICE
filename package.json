@@ -10,8 +10,11 @@
     "@line/bot-sdk": "^7.5.2",
     "googleapis": "^129.0.0",
     "@google-cloud/speech": "^6.0.0"
+    "fluent-ffmpeg": "^2.1.2",
+    "ffmpeg-static": "^5.2.0"
   },
   "engines": {
     "node": "18.x"
   }
 }
+
