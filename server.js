@@ -37,6 +37,12 @@ const auth = new google.auth.JWT(GOOGLE_CLIENT_EMAIL, null, GOOGLE_PRIVATE_KEY, 
 auth.getAccessToken()
   .then(token => console.log('Auth successful, token acquired'))
   .catch(e => console.error('Auth failure:', e.message, e.stack));
+try {
+  await auth.getAccessToken();
+} catch (e) {
+  console.error('Fatal: Google auth failed. Bot cannot process orders.', e);
+  process.exit(1); // Stop server if auth broken
+}
 
 const sheets = google.sheets({version: 'v4', auth});
 const drive = google.drive({version: 'v3', auth});
@@ -197,6 +203,7 @@ async function replyLine(token, text) {
 }
 
 app.listen(process.env.PORT || 3000, () => console.log('Bot running'));
+
 
 
 
