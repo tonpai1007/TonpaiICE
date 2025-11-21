@@ -26,7 +26,7 @@ try {
 
 const auth = new google.auth.GoogleAuth({
   credentials,
-  scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+  scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/cloud-platform']
 });
 
 const speechClient = new speech.SpeechClient({ credentials });
@@ -70,9 +70,11 @@ async function parseOrder(text) {
     await updateStock(item, unit, stockData.stock - qty);
     return `${customer} ค่ะ!\n${item} ${qty}${unit} = ${total}฿\nส่งโดย ${deliver}\nรหัส: ${orderNo}`;
   } catch (e) {
+    console.error('parseOrder error:', e.message, e.stack);
     return 'เกิดข้อผิดพลาดในการเชื่อมต่อ Google—ลองใหม่นะคะ';
   }
 }
+
 async function getStock(item, unit) {
   try {
     console.log(`getStock: Fetching for item=${item}, unit=${unit}`);
@@ -137,9 +139,14 @@ async function addOrder(item, qty, unit, customer, deliver, total) {
 async function processVoice(id, token) {
   try {
     console.log(`processVoice: Fetching audio id=${id}`);
-    const blob = await fetch(`https://api-data.line.me/v2/bot/message/${id}/content`, {
+    const response = await fetch(`https://api-data.line.me/v2/bot/message/${id}/content`, {
       headers: { Authorization: `Bearer ${LINE_TOKEN}` }
-    }).then(r => r.buffer());
+    });
+    if (!response.ok) {
+      throw new Error(`LINE API error: ${response.status} ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const blob = Buffer.from(arrayBuffer);
     console.log('processVoice: Audio fetched');
     const transcript = await speechToText(blob);
     console.log(`processVoice: Transcript: ${transcript}`);
@@ -185,11 +192,14 @@ async function speechToText(blob) {
 async function replyLine(token, text) {
   try {
     console.log(`replyLine: Sending reply: ${text}`);
-    await fetch('https://api.line.me/v2/bot/message/reply', {
+    const res = await fetch('https://api.line.me/v2/bot/message/reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${LINE_TOKEN}` },
       body: JSON.stringify({ replyToken: token, messages: [{ type: 'text', text }] })
     });
+    if (!res.ok) {
+      throw new Error(`LINE reply error: ${res.status} ${res.statusText}`);
+    }
     console.log('replyLine: Reply sent');
   } catch (e) {
     console.error('replyLine error:', e.message, e.stack);
@@ -197,7 +207,6 @@ async function replyLine(token, text) {
 }
 
 app.listen(process.env.PORT || 3000, () => console.log('Bot running'));
-
 
 
 
